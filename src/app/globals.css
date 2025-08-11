@@ -134,15 +134,25 @@
 }
 
 /* Keep anchor-as-button green in both themes */
-a[data-slot="button"] {
+a[data-slot="button"].start-meeting-btn {
   background-color: oklch(0.71 0.17 146.61) !important; /* green-500 */
   color: white !important; /* force white text & icons */
 }
 
-a[data-slot="button"] svg {
+a[data-slot="button"].start-meeting-btn svg {
   color: white !important; /* force icon color to white */
 }
 
-a[data-slot="button"]:hover {
+a[data-slot="button"].start-meeting-btn:hover {
   background-color: oklch(0.65 0.16 146.61) !important; /* green-600 */
 }
+
+/* globals.css */
+a[data-slot="button"].btn-primary-link {
+  background-color: oklch(0.71 0.17 146.61) !important;
+  color: white !important;
+}
+a[data-slot="button"].btn-primary-link:hover {
+  background-color: oklch(0.65 0.16 146.61) !important;
+}
+
