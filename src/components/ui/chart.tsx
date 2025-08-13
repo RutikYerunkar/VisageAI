@@ -5,7 +5,10 @@ import * as RechartsPrimitive from "recharts"
 
 import { cn } from "@/lib/utils"
 
+
+
 // Format: { THEME_NAME: CSS_SELECTOR }
+
 const THEMES = { light: "", dark: ".dark" } as const
 
 export type ChartConfig = {
@@ -102,7 +105,43 @@ ${colorConfig
   )
 }
 
+type CustomTooltipPayload = {
+  name: string;
+  value: number | string;
+  dataKey?: string;
+  color?: string;
+  payload?: Record<string, unknown>;
+  [key: string]: unknown;
+};
+
+
 const ChartTooltip = RechartsPrimitive.Tooltip
+
+
+type CustomTooltipProps = {
+  active?: boolean;
+  payload?: CustomTooltipPayload[];
+  label?: string | number;
+  className?: string;
+  indicator?: "dot" | "line" | "dashed";
+  hideLabel?: boolean;
+  hideIndicator?: boolean;
+  labelFormatter?: (
+    value: string | number | undefined,
+    payload: CustomTooltipPayload[] | undefined
+  ) => React.ReactNode;
+  labelClassName?: string;
+  formatter?: (
+    value: number | string,
+    name: string,
+    item: CustomTooltipPayload,
+    index: number,
+    payload: CustomTooltipPayload[]
+  ) => React.ReactNode;
+  color?: string;
+  nameKey?: string;
+  labelKey?: string;
+};
 
 function ChartTooltipContent({
   active,
@@ -118,14 +157,7 @@ function ChartTooltipContent({
   color,
   nameKey,
   labelKey,
-}: React.ComponentProps<typeof RechartsPrimitive.Tooltip> &
-  React.ComponentProps<"div"> & {
-    hideLabel?: boolean
-    hideIndicator?: boolean
-    indicator?: "line" | "dot" | "dashed"
-    nameKey?: string
-    labelKey?: string
-  }) {
+}: CustomTooltipProps) {
   const { config } = useChart()
 
   const tooltipLabel = React.useMemo(() => {
@@ -144,7 +176,12 @@ function ChartTooltipContent({
     if (labelFormatter) {
       return (
         <div className={cn("font-medium", labelClassName)}>
-          {labelFormatter(value, payload)}
+          {labelFormatter(
+            typeof value === "string" || typeof value === "number"
+              ? value
+              : undefined,
+            payload
+          )}
         </div>
       )
     }
@@ -179,21 +216,22 @@ function ChartTooltipContent({
     >
       {!nestLabel ? tooltipLabel : null}
       <div className="grid gap-1.5">
-        {payload.map((item, index) => {
-          const key = `${nameKey || item.name || item.dataKey || "value"}`
-          const itemConfig = getPayloadConfigFromPayload(config, item, key)
-          const indicatorColor = color || item.payload.fill || item.color
+        {payload.map(
+          (item, index) => {
+          const mapKey = `${nameKey || item.name || item.dataKey || index}`
+          const itemConfig = getPayloadConfigFromPayload(config, item, mapKey)
+          const indicatorColor = color || item.payload?.fill || item.color
 
           return (
             <div
-              key={item.dataKey}
+              key={mapKey}
               className={cn(
                 "[&>svg]:text-muted-foreground flex w-full flex-wrap items-stretch gap-2 [&>svg]:h-2.5 [&>svg]:w-2.5",
                 indicator === "dot" && "items-center"
               )}
             >
               {formatter && item?.value !== undefined && item.name ? (
-                formatter(item.value, item.name, item, index, item.payload)
+                formatter(item.value, item.name, item, index, payload)
               ) : (
                 <>
                   {itemConfig?.icon ? (
@@ -249,18 +287,28 @@ function ChartTooltipContent({
 }
 
 const ChartLegend = RechartsPrimitive.Legend
-
+type CustomLegendPayload = {
+  value: string;
+  type?: string;
+  id?: string;
+  color?: string;
+  dataKey?: string;
+  [key: string]: unknown;
+};
+type CustomLegendProps = {
+  className?: string;
+  hideIcon?: boolean;
+  payload?: CustomLegendPayload[];
+  verticalAlign?: "top" | "bottom" | "middle";
+  nameKey?: string;
+};
 function ChartLegendContent({
   className,
   hideIcon = false,
   payload,
   verticalAlign = "bottom",
   nameKey,
-}: React.ComponentProps<"div"> &
-  Pick<RechartsPrimitive.LegendProps, "payload" | "verticalAlign"> & {
-    hideIcon?: boolean
-    nameKey?: string
-  }) {
+}: CustomLegendProps) {
   const { config } = useChart()
 
   if (!payload?.length) {
@@ -275,13 +323,13 @@ function ChartLegendContent({
         className
       )}
     >
-      {payload.map((item) => {
-        const key = `${nameKey || item.dataKey || "value"}`
-        const itemConfig = getPayloadConfigFromPayload(config, item, key)
+      {payload.map((item,index) => {
+        const mapKey = `${nameKey || item.name || item.dataKey || index}`
+        const itemConfig = getPayloadConfigFromPayload(config, item, mapKey)
 
         return (
           <div
-            key={item.value}
+            key={mapKey}
             className={cn(
               "[&>svg]:text-muted-foreground flex items-center gap-1.5 [&>svg]:h-3 [&>svg]:w-3"
             )}
